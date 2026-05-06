@@ -286,9 +286,10 @@ exports.drop = async (req, res) => {
     let result;
 
     await session.withTransaction(async () => {
-      // ── Ensure Course is not MANDATORY ──────────────────────────────────
+      // ── Students cannot drop mandatory courses; admins can override ─────
       const courseCheck = await Course.findById(courseId).session(session);
-      if (courseCheck && courseCheck.courseType === 'MANDATORY') {
+      const isAdminRequest = req.user && req.user.role === 'admin';
+      if (courseCheck && courseCheck.courseType === 'MANDATORY' && !isAdminRequest) {
         const err = new Error('You cannot drop a mandatory course.');
         err.statusCode = 403;
         throw err;
