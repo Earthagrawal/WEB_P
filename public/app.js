@@ -4,6 +4,7 @@ const API = '/api';
 let allCourses = [];
 let currentFilter = 'all';
 const allowedOpenElectiveCodes = new Set(['OE-DSA', 'OE-HF']);
+const studentGreetings = ['Hello', 'Welcome', 'Hi there', 'Good to see you', 'Ready to learn', 'Let us register'];
 
 // Auth State
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
@@ -151,6 +152,7 @@ async function loadCourses() {
       rosterSelect.innerHTML = '<option value="">— Select Course —</option>' +
         allCourses.map(c => `<option value="${c._id}">[${c.courseCode}] ${c.title}</option>`).join('');
     }
+    populateCourseSelect(allCourses);
     renderCourses();
   } catch (err) {
     grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load courses</p><span>${err.message}</span></div>`;
@@ -341,8 +343,8 @@ async function enroll(courseId) {
       showToast('warn', '🔴 Elective Full', data.message);
       logEntry('warn', data.message);
     } else if (res.status === 403) {
-      // Student already has an elective confirmed
-      showToast('error', '🚫 Already Have an Elective', data.message, 6000);
+      // Student already has an elective/open elective confirmed
+      showToast('error', '🚫 Enrollment Blocked', data.message, 6000);
       logEntry('error', data.message);
     } else {
       showToast('error', 'Enrollment Failed', data.message);
@@ -578,6 +580,7 @@ async function createCourse(e) {
 ══════════════════════════════════════════════════ */
 function populateCourseSelect(courses) {
   const sel = document.getElementById('qCourseSelect');
+  if (!sel) return;
   sel.innerHTML = '<option value="">— Select Course —</option>';
   courses.forEach(c => {
     const opt = document.createElement('option');
@@ -598,9 +601,16 @@ async function quickEnroll() {
       body: JSON.stringify({ studentId: sid, courseId }),
     });
     const data = await res.json();
-    if (data.success) {
+    if (res.status === 201) {
       showToast('success', 'Enrollment Updated', data.message);
       await loadCourses();
+    } else if (res.status === 202) {
+      showToast('warn', 'Waitlisted', data.message);
+      await loadCourses();
+    } else if (res.status === 403) {
+      showToast('error', 'Enrollment Blocked', data.message, 6000);
+    } else if (res.status === 409 && data.isFull) {
+      showToast('warn', 'Course Full', data.message);
     } else {
       showToast('error', 'Enrollment Failed', data.message);
     }
@@ -665,7 +675,8 @@ function checkAuthState() {
       switchTab('admin');
     } else {
       document.getElementById('heroStats').style.display = 'none';
-      document.getElementById('heroGreeting').innerHTML = `Greetings ${currentUser.name}`;
+      const randomGreeting = studentGreetings[Math.floor(Math.random() * studentGreetings.length)];
+      document.getElementById('heroGreeting').innerHTML = `${randomGreeting}, ${currentUser.name}!`;
       document.getElementById('heroGreeting').style.display = 'block';
       document.getElementById('tab-browse').style.display = 'flex';
       document.getElementById('tab-my').style.display = 'flex';

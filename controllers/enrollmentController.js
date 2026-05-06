@@ -96,14 +96,12 @@ exports.enroll = async (req, res) => {
         throw err;
       }
 
-      // ── Guard 2: Already ENROLLED in another ELECTIVE? ───────────────────
-      // Students can only confirm ONE elective. If they are already enrolled
-      // in a different elective, block this new enrollment.
-      if (requestedCourse.courseType === 'ELECTIVE') {
-        // Find all elective courseIds (excluding this one)
+      // ── Guard 2: one seat-based selection per type (ELECTIVE / OPEN_ELECTIVE)
+      if (requestedCourse.courseType === 'ELECTIVE' || requestedCourse.courseType === 'OPEN_ELECTIVE') {
+        // Find all same-type courseIds (excluding this one)
         const allBatchElectives = await Course.find({
           _id: { $ne: courseId },
-          courseType: 'ELECTIVE',
+          courseType: requestedCourse.courseType,
         }).select('_id').session(session);
         const electiveCourseIds = allBatchElectives.map(c => c._id);
 
@@ -115,8 +113,12 @@ exports.enroll = async (req, res) => {
 
         if (alreadyHasElective) {
           const enrolledCourse = await Course.findById(alreadyHasElective.courseId).session(session);
+          const label = requestedCourse.courseType === 'OPEN_ELECTIVE' ? 'open elective' : 'elective';
+          const limitMessage = requestedCourse.courseType === 'OPEN_ELECTIVE'
+            ? 'You can only select 1 open elective.'
+            : 'You can only have one elective.';
           const err = new Error(
-            `You are already enrolled in an elective: "${enrolledCourse ? enrolledCourse.title : 'another course'}". You can only have one elective. Please drop it first to select a different one.`
+            `You are already enrolled in an ${label}: "${enrolledCourse ? enrolledCourse.title : 'another course'}". ${limitMessage} Please drop it first to select a different one.`
           );
           err.statusCode = 403;
           throw err;
