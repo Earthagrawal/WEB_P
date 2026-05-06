@@ -5,6 +5,12 @@ Features **race-condition-proof** seat allocation using atomic MongoDB transacti
 
 ---
 
+## 🌐 Live Deployment
+
+- Vercel URL: [https://web-p-sigma.vercel.app/](https://web-p-sigma.vercel.app/)
+
+---
+
 ## 📋 Prerequisites
 
 Make sure the following are installed on your machine before proceeding:
@@ -254,3 +260,12 @@ MongoDB (port 27017)
 - **Database:** MongoDB · Mongoose ODM
 - **Frontend:** Vanilla HTML · CSS · JavaScript
 - **Concurrency:** MongoDB Atomic Transactions (`session.withTransaction`)
+
+---
+
+## 💡 Suggested Improvements
+
+- Add a `/api/health` endpoint (with DB status) so post-deploy issues are easier to detect quickly.
+- Move all secrets (`MONGO_URI`, `JWT_SECRET`) to deployment environment variables only; keep `.env` out of git.
+- Add role-based API tests for quick enroll/drop, mandatory drop rules, and open-elective limit enforcement.
+- Add a small CI workflow (lint + basic API smoke tests) so broken deploys are caught before production.

@@ -22,6 +22,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .header-inner{max-width:1200px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;gap:1rem}
 .logo{display:flex;align-items:center;gap:.6rem}
 .logo-icon{width:36px;height:36px;background:var(--accent);border-radius:10px;display:grid;place-items:center;color:#fff}
+.logo-image{height:38px;width:auto;display:block}
 .logo-text{font-weight:800;font-size:1.2rem;color:var(--text)}
 .student-panel{display:flex;align-items:center;gap:.75rem}
 .student-input-wrapper{position:relative;display:flex;align-items:center}
@@ -166,8 +167,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .form-group{display:flex;flex-direction:column;gap:.35rem}
 .form-group.full-width{grid-column:1/-1}
 .form-group label{font-size:.78rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em}
+.req-star{color:var(--red)}
 .form-group input,.form-group select,.form-group textarea{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.55rem .75rem;color:var(--text);font-family:var(--font);font-size:.875rem;transition:var(--transition);resize:vertical}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,.15)}
+.form-group input:invalid,.form-group select:invalid,.form-group textarea:invalid{border-color:var(--red)}
 .form-group input::placeholder,.form-group textarea::placeholder{color:var(--text3)}
 .form-group select option{background:var(--surface2);color:var(--text)}
 .quick-tool{display:flex;flex-direction:column;gap:.85rem;margin-bottom:1.25rem}

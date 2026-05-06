@@ -31,8 +31,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 function setupCreateCourseValidation() {
+  const createForm = document.getElementById('createCourseForm');
   const instructorInput = document.getElementById('fInstructor');
-  if (!instructorInput) return;
+  if (!createForm || !instructorInput) return;
+
+  const requiredFields = createForm.querySelectorAll('input[required], select[required], textarea[required]');
+  requiredFields.forEach((field) => {
+    field.addEventListener('invalid', () => {
+      if (field.validity.valueMissing) {
+        field.setCustomValidity('required');
+      }
+    });
+    field.addEventListener('input', () => field.setCustomValidity(''));
+    field.addEventListener('change', () => field.setCustomValidity(''));
+  });
 
   instructorInput.addEventListener('input', () => {
     const isValid = /^[A-Za-z. ]+$/.test(instructorInput.value.trim());
