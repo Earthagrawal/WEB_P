@@ -4,7 +4,7 @@ const API = '/api';
 let allCourses = [];
 let currentFilter = 'all';
 const allowedOpenElectiveCodes = new Set(['OE-DSA', 'OE-HF']);
-const studentGreetings = ['Hello', 'Welcome', 'Hi there', 'Good to see you', 'Ready to learn', 'Let us register'];
+const studentGreetings = ['Welcome back', 'Ready to learn', 'Greetings'];
 
 // Auth State
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
