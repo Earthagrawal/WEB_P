@@ -196,8 +196,21 @@ async function seedDB() {
     console.log('✅ Connected to MongoDB');
     await Course.deleteMany({});
     console.log('🗑️  Cleared existing courses');
-    await Course.insertMany(seedCourses);
-    console.log(`🌱 Seeded ${seedCourses.length} targeted courses for CSE, ECE, CCE, & ME branches.`);
+    const preservedCourses = seedCourses.filter((course) => !course.courseCode.startsWith('OE'));
+    preservedCourses.forEach(c => {
+      if (c.courseType === 'ELECTIVE') {
+        c.credits = 3;
+      }
+    });
+
+    const openElectives = [
+      { courseCode: 'OE-DSA', title: 'DSA with Python', instructor: 'TBA', totalSeats: 50, credits: 2, targetYear: 'ALL', targetSemester: 'ALL', targetBranch: 'ALL', courseType: 'OPEN_ELECTIVE' },
+      { courseCode: 'OE-HF', title: 'Health and Fitness', instructor: 'TBA', totalSeats: 50, credits: 2, targetYear: 'ALL', targetSemester: 'ALL', targetBranch: 'ALL', courseType: 'OPEN_ELECTIVE' },
+    ];
+
+    const finalSeedCourses = [...preservedCourses, ...openElectives];
+    await Course.insertMany(finalSeedCourses);
+    console.log(`🌱 Seeded ${finalSeedCourses.length} targeted courses for CSE, ECE, CCE, & ME branches.`);
   } catch (err) {
     console.error('❌ Seeding failed:', err);
   } finally {

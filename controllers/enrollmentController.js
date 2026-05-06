@@ -400,6 +400,33 @@ exports.drop = async (req, res) => {
 // ─── POST /api/courses (Admin: create course) ────────────────────────────────
 exports.createCourse = async (req, res) => {
   try {
+    const { courseCode, title, instructor, credits } = req.body;
+    const normalizedCode = (courseCode || '').toString().trim().toUpperCase();
+    const normalizedTitle = (title || '').toString().trim();
+    const normalizedInstructor = (instructor || '').toString().trim();
+    const parsedCredits = Number(credits);
+
+    if (!/^(CS|CC|EC|ME)\d{3}$/.test(normalizedCode)) {
+      return res.status(400).json({ success: false, message: 'Invalid course code. Use format like CS123, CC234, EC345, or ME456.' });
+    }
+
+    if (!/^(?!.*\d).{1,250}$/.test(normalizedTitle)) {
+      return res.status(400).json({ success: false, message: 'Invalid course title. Numbers are not allowed and max length is 250.' });
+    }
+
+    if (!/^[A-Za-z. ]+$/.test(normalizedInstructor)) {
+      return res.status(400).json({ success: false, message: 'Invalid instructor name. Only letters, spaces, and dot (.) are allowed.' });
+    }
+
+    if (Number.isNaN(parsedCredits) || parsedCredits < 1 || parsedCredits > 4.5 || (parsedCredits * 2) % 1 !== 0) {
+      return res.status(400).json({ success: false, message: 'Invalid credits. Allowed values: 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5.' });
+    }
+
+    req.body.courseCode = normalizedCode;
+    req.body.title = normalizedTitle;
+    req.body.instructor = normalizedInstructor;
+    req.body.credits = parsedCredits;
+
     const course = new Course(req.body);
     await course.save();
     res.status(201).json({ success: true, data: course });

@@ -3,6 +3,7 @@
 const API = '/api';
 let allCourses = [];
 let currentFilter = 'all';
+const allowedOpenElectiveCodes = new Set(['OE-DSA', 'OE-HF']);
 
 // Auth State
 let currentUser = JSON.parse(localStorage.getItem('user')) || null;
@@ -23,10 +24,21 @@ const getHeaders = () => {
 ══════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   checkAuthState();
+  setupCreateCourseValidation();
   if (currentUser) {
     loadCourses();
   }
 });
+function setupCreateCourseValidation() {
+  const instructorInput = document.getElementById('fInstructor');
+  if (!instructorInput) return;
+
+  instructorInput.addEventListener('input', () => {
+    const isValid = /^[A-Za-z. ]+$/.test(instructorInput.value.trim());
+    instructorInput.setCustomValidity(isValid || !instructorInput.value ? '' : 'Invalid');
+  });
+}
+
 
 
 
@@ -129,7 +141,9 @@ async function loadCourses() {
     const res = await fetch(`${API}/courses`, { headers: getHeaders() });
     const data = await res.json();
     if (!data.success) throw new Error(data.message);
-    allCourses = data.data;
+    allCourses = data.data.filter((course) =>
+      course.courseType !== 'OPEN_ELECTIVE' || allowedOpenElectiveCodes.has(course.courseCode)
+    );
     updateHeroStats(allCourses);
     // Populate the course roster dropdown in the admin panel
     const rosterSelect = document.getElementById('adminCourseRosterSelect');
@@ -175,8 +189,8 @@ function renderCourses() {
 
   if (currentUser && currentUser.role !== 'admin') {
     const mandatory = courses.filter(c => c.courseType === 'MANDATORY');
-    const elective = courses.filter(c => c.courseType === 'ELECTIVE');
-    const extra = courses.filter(c => c.courseType === 'EXTRA');
+    const electives = courses.filter(c => c.courseType === 'ELECTIVE');
+    const openElectives = courses.filter(c => c.courseType === 'OPEN_ELECTIVE' && allowedOpenElectiveCodes.has(c.courseCode));
 
     grid.style.display = 'none';
     
@@ -187,26 +201,26 @@ function renderCourses() {
       mandatorySection.style.display = 'none';
     }
 
-    if (elective.length) {
+    if (electives.length) {
       electiveSection.style.display = 'block';
-      electiveGrid.innerHTML = elective.map(c => electiveRow(c)).join('');
+      electiveGrid.innerHTML = electives.map(c => electiveRow(c)).join('');
     } else {
       electiveSection.style.display = 'none';
     }
 
-    const extraSection = document.getElementById('extraSection');
-    const extraGrid = document.getElementById('extraCoursesGrid');
-    if (extra.length) {
-      extraSection.style.display = 'block';
-      extraGrid.innerHTML = extra.map(c => extraRow(c)).join('');
+    const openElectiveSection = document.getElementById('openElectiveSection');
+    const openElectiveGrid = document.getElementById('openElectiveCoursesGrid');
+    if (openElectives.length > 0) {
+      openElectiveSection.style.display = 'block';
+      openElectiveGrid.innerHTML = openElectives.map(c => extraRow(c)).join('');
     } else {
-      extraSection.style.display = 'none';
+      openElectiveSection.style.display = 'none';
     }
   } else {
     // Admin view
     mandatorySection.style.display = 'none';
     electiveSection.style.display = 'none';
-    document.getElementById('extraSection').style.display = 'none';
+    document.getElementById('openElectiveSection').style.display = 'none';
     grid.style.display = 'grid';
     grid.innerHTML = courses.map(c => courseCard(c)).join('');
   }
@@ -235,10 +249,6 @@ function electiveRow(c) {
     <span class="elective-title">${c.title}</span>
     <span class="elective-meta">${c.credits} cr · ${c.instructor}</span>
     <span class="seat-badge ${badgeClass}" style="margin-left:auto; font-size:0.75rem;">${badgeText}</span>
-    <div class="row-actions" onclick="event.stopPropagation()">
-      <button class="btn-primary btn-tiny" onclick="enroll('${c._id}')">${isFull ? 'Waitlist' : 'Enroll'}</button>
-      <button class="btn-drop btn-tiny" onclick="drop('${c._id}')">Drop</button>
-    </div>
   </div>`;
 }
 
@@ -252,10 +262,6 @@ function extraRow(c) {
     <span class="elective-title">${c.title}</span>
     <span class="elective-meta">${c.credits} cr · ${c.instructor}</span>
     <span class="seat-badge ${isFull ? 'full' : 'available'}" style="margin-left:auto; font-size:0.75rem;">${isFull ? 'Full' : avail + ' left'}</span>
-    <div class="row-actions" onclick="event.stopPropagation()">
-      <button class="btn-primary btn-tiny" style="background:var(--text2)" onclick="enroll('${c._id}')">${isFull ? 'Waitlist' : 'Enroll'}</button>
-      <button class="btn-drop btn-tiny" onclick="drop('${c._id}')">Drop</button>
-    </div>
   </div>`;
 }
 
@@ -291,14 +297,6 @@ function courseCard(c) {
     </div>
     ${c.description ? `<div class="course-description">${c.description}</div>` : ''}
     <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${pct}%"></div></div>
-    <div class="card-actions" onclick="event.stopPropagation()">
-      ${isFull
-        ? `<button class="card-btn card-btn-waitlist" onclick="enroll('${c._id}')">⏳ Join Waitlist</button>
-           <button class="card-btn card-btn-drop" onclick="drop('${c._id}')">Drop</button>`
-        : `<button class="card-btn card-btn-enroll" onclick="enroll('${c._id}')">Enroll Now</button>
-           <button class="card-btn card-btn-drop" onclick="drop('${c._id}')">Drop</button>`
-      }
-    </div>
   </div>`;
 }
 
@@ -317,8 +315,7 @@ function setFilter(filter, btn) {
 async function enroll(courseId) {
   const sid = currentStudentId();
   if (!sid) {
-    showToast('warn', 'Student ID Required', 'Enter your Student ID in the top bar first');
-    document.getElementById('studentIdInput').focus();
+    showToast('warn', 'Roll Number Required', 'Please log in with your roll number first');
     return;
   }
   try {
@@ -364,8 +361,7 @@ async function enroll(courseId) {
 async function drop(courseId) {
   const sid = currentStudentId();
   if (!sid) {
-    showToast('warn', 'Student ID Required', 'Enter your Student ID in the top bar first');
-    document.getElementById('studentIdInput').focus();
+    showToast('warn', 'Roll Number Required', 'Please log in with your roll number first');
     return;
   }
   try {
@@ -399,8 +395,8 @@ async function loadStudentEnrollments() {
   const label = document.getElementById('myStudentLabel');
 
   if (!sid) {
-    label.textContent = 'Enter your Student ID in the top bar to view your courses';
-    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🎓</div><p>No Student ID entered</p><span>Type your ID in the header and click My Courses</span></div>';
+    label.textContent = 'Log in with your roll number to view your courses';
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🎓</div><p>No roll number found</p><span>Log in and open My Courses</span></div>';
     return;
   }
 
@@ -520,13 +516,35 @@ async function createCourse(e) {
   const targetSemester = document.getElementById('fSem').value;
   const targetBranch = document.getElementById('fBranch').value;
 
+  const courseCode = document.getElementById('fCourseCode').value.trim().toUpperCase();
+  const title = document.getElementById('fTitle').value.trim();
+  const instructor = document.getElementById('fInstructor').value.trim();
+  const credits = parseFloat(document.getElementById('fCredits').value);
+
+  if (!/^(CS|CC|EC|ME)\d{3}$/.test(courseCode)) {
+    showToast('error', 'Invalid Course Code', 'Use format like CS123, CC234, EC345, or ME456.');
+    return;
+  }
+  if (!/^(?!.*\d).{1,250}$/.test(title)) {
+    showToast('error', 'Invalid Course Title', 'Course title must be text only and up to 250 characters.');
+    return;
+  }
+  if (!/^[A-Za-z. ]+$/.test(instructor)) {
+    showToast('error', 'Invalid Instructor Name', 'Only letters, spaces, and dot (.) are allowed.');
+    return;
+  }
+  if (Number.isNaN(credits) || credits < 1 || credits > 4.5 || (credits * 2) % 1 !== 0) {
+    showToast('error', 'Invalid Credits', 'Credits must be 1 to 4.5 in 0.5 steps.');
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Creating…';
   const body = {
-    courseCode: document.getElementById('fCourseCode').value,
-    title: document.getElementById('fTitle').value,
-    instructor: document.getElementById('fInstructor').value,
+    courseCode,
+    title,
+    instructor,
     totalSeats: parseInt(document.getElementById('fSeats').value),
-    credits: parseInt(document.getElementById('fCredits').value) || 3,
+    credits,
     description: document.getElementById('fDescription').value,
     courseType,
     targetYear,
@@ -572,12 +590,23 @@ function populateCourseSelect(courses) {
 async function quickEnroll() {
   const sid = document.getElementById('qStudentId').value.trim().toUpperCase();
   const courseId = document.getElementById('qCourseSelect').value;
-  if (!sid || !courseId) { showToast('warn', 'Missing Fields', 'Enter a Student ID and select a course'); return; }
-  // Temporarily override student ID
-  const prev = document.getElementById('studentIdInput').value;
-  document.getElementById('studentIdInput').value = sid;
-  await enroll(courseId);
-  document.getElementById('studentIdInput').value = prev;
+  if (!sid || !courseId) { showToast('warn', 'Missing Fields', 'Enter a roll number and select a course'); return; }
+  try {
+    const res = await fetch(`${API}/enroll`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ studentId: sid, courseId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('success', 'Enrollment Updated', data.message);
+      await loadCourses();
+    } else {
+      showToast('error', 'Enrollment Failed', data.message);
+    }
+  } catch (err) {
+    showToast('error', 'Request Failed', err.message);
+  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -592,9 +621,18 @@ function selectAuthRole(role) {
   document.getElementById('authFormTitle').textContent = `${roleName} Login`;
   
   // Update labels dynamically based on role
-  const idLabel = role === 'admin' ? 'Admin ID' : 'Student ID';
+  const idLabel = role === 'admin' ? 'Admin ID' : 'Roll Number';
   document.getElementById('lblLoginId').textContent = idLabel;
   document.getElementById('lblSignupId').textContent = idLabel;
+
+  document.getElementById('lStudentId').placeholder = role === 'admin' ? 'Enter admXXX' : 'Enter roll number';
+  document.getElementById('sStudentId').placeholder = role === 'admin' ? 'Enter admXXX' : 'Enter roll number';
+  document.getElementById('sEmail').placeholder = role === 'admin'
+    ? 'Enter college email (admXXX@lnmiit.ac.in)'
+    : 'Enter college email (rollno@lnmiit.ac.in)';
+  document.getElementById('sEmail').title = role === 'admin'
+    ? 'Use format: adm345@lnmiit.ac.in'
+    : 'Use format: 24ucs097@lnmiit.ac.in';
   
   switchAuthTab('login');
 }
@@ -619,11 +657,16 @@ function checkAuthState() {
 
     // Role-based routing
     if (currentUser.role === 'admin') {
+      document.getElementById('heroStats').style.display = 'flex';
+      document.getElementById('heroGreeting').style.display = 'none';
       document.getElementById('tab-browse').style.display = 'none';
       document.getElementById('tab-my').style.display = 'none';
       document.getElementById('tab-admin').style.display = 'flex';
       switchTab('admin');
     } else {
+      document.getElementById('heroStats').style.display = 'none';
+      document.getElementById('heroGreeting').innerHTML = `Greetings ${currentUser.name}`;
+      document.getElementById('heroGreeting').style.display = 'block';
       document.getElementById('tab-browse').style.display = 'flex';
       document.getElementById('tab-my').style.display = 'flex';
       document.getElementById('tab-admin').style.display = 'none';
@@ -743,11 +786,23 @@ function logout() {
 async function quickDrop() {
   const sid = document.getElementById('qStudentId').value.trim().toUpperCase();
   const courseId = document.getElementById('qCourseSelect').value;
-  if (!sid || !courseId) { showToast('warn', 'Missing Fields', 'Enter a Student ID and select a course'); return; }
-  const prev = document.getElementById('studentIdInput').value;
-  document.getElementById('studentIdInput').value = sid;
-  await drop(courseId);
-  document.getElementById('studentIdInput').value = prev;
+  if (!sid || !courseId) { showToast('warn', 'Missing Fields', 'Enter a roll number and select a course'); return; }
+  try {
+    const res = await fetch(`${API}/drop`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ studentId: sid, courseId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('success', 'Drop Updated', data.message);
+      await loadCourses();
+    } else {
+      showToast('error', 'Drop Failed', data.message);
+    }
+  } catch (err) {
+    showToast('error', 'Request Failed', err.message);
+  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -756,7 +811,7 @@ async function quickDrop() {
 async function adminLookupStudent() {
   const sid = document.getElementById('adminStudentLookupId').value.trim().toUpperCase();
   const result = document.getElementById('adminStudentLookupResult');
-  if (!sid) { showToast('warn', 'Missing', 'Enter a Student ID'); return; }
+  if (!sid) { showToast('warn', 'Missing', 'Enter a roll number'); return; }
 
   result.innerHTML = '<div class="loading-state" style="padding:1rem 0;"><div class="spinner"></div><p>Searching…</p></div>';
   try {
@@ -834,7 +889,7 @@ async function adminLoadRoster() {
         <thead>
           <tr style="border-bottom:1px solid var(--border);">
             <th style="text-align:left;padding:0.5rem 0.4rem;">#</th>
-            <th style="text-align:left;padding:0.5rem 0.4rem;">Student ID</th>
+            <th style="text-align:left;padding:0.5rem 0.4rem;">Roll Number</th>
             <th style="text-align:left;padding:0.5rem 0.4rem;">Status</th>
             <th style="text-align:left;padding:0.5rem 0.4rem;">Enrolled At</th>
           </tr>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CourseReg — Student Course Registration System</title>
+  <title>Course Allotment Portal — Student Course Registration System</title>
   <meta name="description" content="Fair, concurrent-safe student course registration with automatic waitlist management and FCFS seat allocation." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,7 +23,7 @@
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <span class="logo-text">CourseReg</span>
+        <span class="logo-text">Course Allotment Portal</span>
       </div>
 
       <div class="student-panel" id="userPanel" style="display:none;">
@@ -45,14 +45,7 @@
   <section class="hero">
     <div class="hero-content">
 
-      <h1 class="hero-title">
-        Smart Course<br />
-        <span class="gradient-text">Registration</span>
-      </h1>
-      <p class="hero-subtitle">
-        First-Come-First-Serve seat allocation with automatic waitlist management.
-        Every enrollment is atomic — zero overbooking, guaranteed.
-      </p>
+
       <div class="hero-stats" id="heroStats">
         <div class="stat-chip" id="statTotal">
           <span class="stat-num">—</span>
@@ -67,6 +60,8 @@
           <span class="stat-label">Enrolled</span>
         </div>
       </div>
+      <h1 class="hero-title" id="heroGreeting" style="display:none;">
+      </h1>
     </div>
 
   </section>
@@ -122,9 +117,9 @@
         <div class="courses-grid" id="electiveCoursesGrid"></div>
       </div>
 
-      <div id="extraSection" style="margin-bottom: 2rem; display: none;">
-        <h2 style="margin-bottom: 1rem;">Extra Courses (Health, Fitness & Skills)</h2>
-        <div class="courses-grid" id="extraCoursesGrid"></div>
+      <div id="openElectiveSection" style="margin-bottom: 2rem; display: none;">
+        <h2 style="margin-bottom: 1rem;">Open Elective Courses</h2>
+        <div class="courses-grid" id="openElectiveCoursesGrid"></div>
       </div>
 
       <div class="courses-grid" id="coursesGrid">
@@ -139,13 +134,13 @@
     <div class="tab-content" id="content-my">
       <div class="my-enrollments-header">
         <h2>My Enrollments</h2>
-        <p id="myStudentLabel" class="muted">Enter your Student ID in the top bar to view your courses</p>
+        <p id="myStudentLabel" class="muted">Log in with your roll number to view your courses</p>
       </div>
       <div id="myEnrollmentsList" class="my-enrollments-list">
         <div class="empty-state">
           <div class="empty-icon">🎓</div>
           <p>No enrollments yet</p>
-          <span>Enter your Student ID and browse courses to get started</span>
+          <span>Log in with your roll number and browse courses to get started</span>
         </div>
       </div>
     </div>
@@ -164,23 +159,23 @@
             <div class="form-grid">
               <div class="form-group">
                 <label for="fCourseCode">Course Code *</label>
-                <input type="text" id="fCourseCode" placeholder="Enter course code" required />
+                <input type="text" id="fCourseCode" placeholder="Enter course code (CS123)" pattern="^(CS|CC|EC|ME)\d{3}$" title="Invalid. Use format like CS123, CC234, EC345, ME456" required />
               </div>
               <div class="form-group">
                 <label for="fCredits">Credits</label>
-                <input type="number" id="fCredits" placeholder="3" min="1" max="4" value="3" />
+                <input type="number" id="fCredits" placeholder="Enter credits" min="1" max="4.5" step="0.5" value="3" />
               </div>
               <div class="form-group full-width">
                 <label for="fTitle">Course Title *</label>
-                <input type="text" id="fTitle" placeholder="Title of the course" required />
+                <input type="text" id="fTitle" placeholder="Enter course title" maxlength="250" pattern="^(?!.*\d).{1,250}$" title="Invalid. Numbers are not allowed in course title" required />
               </div>
               <div class="form-group">
                 <label for="fInstructor">Instructor *</label>
-                <input type="text" id="fInstructor" placeholder="Enter the Name" required />
+                <input type="text" id="fInstructor" placeholder="Enter instructor name" pattern="^[A-Za-z. ]+$" title="Invalid. Only letters, spaces, and dot (.) are allowed" required />
               </div>
               <div class="form-group">
                 <label for="fSeats">Total Seats *</label>
-                <input type="number" id="fSeats" placeholder="30" min="1" required />
+                <input type="number" id="fSeats" placeholder="Enter total seats" min="1" required />
               </div>
 
               <!-- Systematic Targeting -->
@@ -220,22 +215,22 @@
                 <div style="display:flex;gap:1.5rem;margin-top:0.4rem;flex-wrap:wrap;">
                   <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-weight:400;">
                     <input type="radio" name="fCourseType" value="MANDATORY" checked />
-                    🔒 Mandatory
+                    Mandatory
                   </label>
                   <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-weight:400;">
                     <input type="radio" name="fCourseType" value="ELECTIVE" />
-                    🎯 Elective
+                    Elective
                   </label>
                   <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-weight:400;">
-                    <input type="radio" name="fCourseType" value="EXTRA" />
-                    🌟 Extra Course
+                    <input type="radio" name="fCourseType" value="OPEN_ELECTIVE" />
+                    Extra Course
                   </label>
                 </div>
               </div>
 
               <div class="form-group full-width">
                 <label for="fDescription">Description</label>
-                <textarea id="fDescription" rows="3" placeholder="Brief course description…"></textarea>
+                <textarea id="fDescription" rows="3" placeholder="Enter course description"></textarea>
               </div>
             </div>
             <button type="submit" class="btn-primary" id="createCourseBtn">
@@ -253,8 +248,8 @@
           </h3>
           <div class="quick-tool">
             <div class="form-group">
-              <label for="qStudentId">Student ID</label>
-              <input type="text" id="qStudentId" placeholder="Enter Student-ID" />
+              <label for="qStudentId">Roll Number</label>
+              <input type="text" id="qStudentId" placeholder="Enter roll number" />
             </div>
             <div class="form-group">
               <label for="qCourseSelect">Course</label>
@@ -284,8 +279,8 @@
           </h3>
           <div style="display:flex;gap:0.75rem;align-items:flex-end;flex-wrap:wrap;">
             <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0;">
-              <label for="adminStudentLookupId">Student ID</label>
-              <input type="text" id="adminStudentLookupId" placeholder="e.g. 24ucs082" style="margin-top:0.4rem;" />
+              <label for="adminStudentLookupId">Roll Number</label>
+              <input type="text" id="adminStudentLookupId" placeholder="Enter roll number" style="margin-top:0.4rem;" />
             </div>
             <button class="btn-primary" onclick="adminLookupStudent()" style="white-space:nowrap;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -337,7 +332,7 @@
       
       <!-- STEP 1: Role Selection -->
       <div id="authRoleSelection">
-        <h2 style="margin-top: 0; margin-bottom: 1.5rem; text-align: center; font-size: 1.5rem;">Welcome to CourseReg</h2>
+        <h2 style="margin-top: 0; margin-bottom: 1.5rem; text-align: center; font-size: 1.5rem;">Welcome to Course Allotment Portal</h2>
         <p style="text-align: center; color: var(--text2); margin-bottom: 2rem;">Please choose your role to continue.</p>
         
         <div style="display: flex; flex-direction: column; gap: 1rem;">
@@ -367,8 +362,8 @@
         <!-- Login Form -->
         <form id="loginForm" onsubmit="handleLogin(event)">
           <div class="form-group" style="margin-bottom: 1rem;">
-            <label for="lStudentId" id="lblLoginId">Student ID</label>
-            <input type="text" id="lStudentId" placeholder="e.g. STU-001" required />
+            <label for="lStudentId" id="lblLoginId">Roll Number</label>
+            <input type="text" id="lStudentId" placeholder="Enter roll number" title="Student: 24ucs097, Admin: adm123" required />
           </div>
           <div class="form-group" style="margin-bottom: 1.5rem;">
             <label for="lPassword">Password</label>
@@ -380,20 +375,20 @@
         <!-- Signup Form -->
         <form id="signupForm" onsubmit="handleSignup(event)" style="display: none;">
           <div class="form-group" style="margin-bottom: 1rem;">
-            <label for="sStudentId" id="lblSignupId">Student ID</label>
-            <input type="text" id="sStudentId" placeholder="e.g. STU-001" required />
+            <label for="sStudentId" id="lblSignupId">Roll Number</label>
+            <input type="text" id="sStudentId" placeholder="Enter roll number" title="Student: 24ucs097, Admin: adm123" required />
           </div>
           <div class="form-group" style="margin-bottom: 1rem;">
             <label for="sName">Full Name</label>
-            <input type="text" id="sName" placeholder="e.g. Alice Johnson" required />
+            <input type="text" id="sName" placeholder="Enter full name" required />
           </div>
           <div class="form-group" style="margin-bottom: 1rem;">
             <label for="sEmail">Email Address</label>
-            <input type="email" id="sEmail" placeholder="e.g. alice@university.edu" required />
+            <input type="email" id="sEmail" placeholder="Enter college email (rollno@lnmiit.ac.in)" pattern="^[^\s@]+@lnmiit\.ac\.in$" title="Student: 24ucs097@lnmiit.ac.in, Admin: adm345@lnmiit.ac.in" required />
           </div>
           <div class="form-group" style="margin-bottom: 1.5rem;">
             <label for="sPassword">Password</label>
-            <input type="password" id="sPassword" placeholder="••••••••" required />
+            <input type="password" id="sPassword" placeholder="••••••••" minlength="8" maxlength="15" title="8-15 chars, include at least 3: uppercase, lowercase, number, special" required />
           </div>
           <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;" id="signupBtn">Create Account</button>
         </form>

@@ -1,4 +1,4 @@
-# 🎓 CourseReg — Atomic Course Registration System
+# 🎓 Course Allotment Portal — Atomic Course Registration System
 
 A **First-Come-First-Serve** student course registration system built with Node.js, Express, and MongoDB.  
 Features **race-condition-proof** seat allocation using atomic MongoDB transactions and automatic waitlist promotion.
@@ -164,7 +164,7 @@ curl -X POST http://localhost:3000/api/drop \
 
 ## 🧪 Testing the System (Demo Walkthrough)
 
-Use Student IDs like `STU-001`, `STU-002`, `STU-003`, `STU-004` to simulate multiple students.
+Use roll numbers like `24UCS097`, `23DCS082`, `24UEC101`, `24UCC112` to simulate multiple students.
 
 **Try this scenario with CS-301 (only 2 seats):**
 

@@ -7,7 +7,17 @@ const userSchema = new mongoose.Schema({
     unique: true,
     uppercase: true,
     trim: true,
-    match: [/^[A-Z0-9\-]+$/, 'Student ID can only contain letters, numbers, and hyphens'],
+    match: [/^(\d{2}(UCS|DCS|UEC|DEC|UME|UCC)\d{3}|ADM\d{3})$/i, 'Use valid roll number (24UCS097) or admin ID (ADM123)'],
+    validate: {
+      validator(value) {
+        if (/^ADM\d{3}$/i.test(value)) {
+          return true;
+        }
+        const trailingDigits = parseInt(value.slice(-3), 10);
+        return trailingDigits > 0;
+      },
+      message: 'Roll number last 3 digits must be between 001 and 999',
+    },
   },
   name: {
     type: String,
@@ -20,7 +30,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
+    match: [/^[^\s@]+@lnmiit\.ac\.in$/i, 'Please enter a valid college email address (yourname@lnmiit.ac.in)'],
   },
   department: {
     type: String,

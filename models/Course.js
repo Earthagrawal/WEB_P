@@ -53,7 +53,7 @@ const courseSchema = new mongoose.Schema({
   },
   courseType: {
     type: String,
-    enum: ['MANDATORY', 'ELECTIVE', 'EXTRA'],
+    enum: ['MANDATORY', 'ELECTIVE', 'OPEN_ELECTIVE'],
     default: 'ELECTIVE',
   },
 }, { timestamps: true });
