@@ -21,7 +21,7 @@ mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB Atlas connected'))
   .catch(err => {
     console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
+    console.error('⚠️ Server will continue to run, but database operations will fail.');
   });
 
 const apiRouter = require('./routes/api');
