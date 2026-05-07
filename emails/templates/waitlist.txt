@@ -1,0 +1,9 @@
+Hi {{ name }},
+
+You have been added to the waitlist for {{ courseCode }} — {{ courseTitle }}.
+Your current position: #{{ position }}
+
+We'll notify you if a seat becomes available.
+
+Regards,
+Course Allotment Portal

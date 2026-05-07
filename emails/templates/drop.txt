@@ -1,0 +1,6 @@
+Hi {{ name }},
+
+This is to confirm that you have been dropped from {{ courseCode }} — {{ courseTitle }}.
+
+Regards,
+Course Allotment Portal

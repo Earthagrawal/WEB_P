@@ -1,0 +1,8 @@
+Hi {{ name }},
+
+You have been auto-enrolled in the following mandatory courses for your batch:
+
+{{ courseList }}
+
+Regards,
+Course Allotment Portal

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
+const { sendEnrollmentEmail, sendWaitlistEmail, sendPromotionEmail, sendDropEmail } = require('../utils/email');
 
 // ─── GET /api/courses ────────────────────────────────────────────────────────
 exports.getCourses = async (req, res) => {
@@ -247,6 +248,53 @@ exports.enroll = async (req, res) => {
         }
       }
     });
+
+    // Send notification emails asynchronously (do not block response)
+    (async () => {
+      try {
+        const enrollmentObj = result.body && result.body.enrollment ? result.body.enrollment : null;
+        const courseObj = result.body && result.body.course ? result.body.course : null;
+        const studentDoc = await User.findOne({ studentId: sid });
+        const to = studentDoc ? studentDoc.email : null;
+        const name = studentDoc ? studentDoc.name : sid;
+
+        if (enrollmentObj && courseObj && to) {
+          if (enrollmentObj.status === 'ENROLLED') {
+            sendEnrollmentEmail({ to, name, studentId: sid, course: courseObj }).catch(console.error);
+          } else if (enrollmentObj.status === 'WAITLISTED') {
+            sendWaitlistEmail({ to, name, studentId: sid, course: courseObj, position: result.body.waitlistPosition }).catch(console.error);
+          }
+        }
+      } catch (err) {
+        console.error('Notification error (enroll):', err);
+      }
+    })();
+
+    // Send notifications for drop and promotion (async)
+    (async () => {
+      try {
+        const studentDoc = await User.findOne({ studentId: sid });
+        const to = studentDoc ? studentDoc.email : null;
+        const name = studentDoc ? studentDoc.name : sid;
+        const courseObj = result.body && result.body.course ? result.body.course : null;
+
+        if (to && courseObj) {
+          // Notify the student who dropped
+          sendDropEmail({ to, name, studentId: sid, course: courseObj }).catch(console.error);
+        }
+
+        // If someone was promoted, notify them
+        if (result.body && result.body.promotedStudentId) {
+          const promotedId = result.body.promotedStudentId;
+          const promotedDoc = await User.findOne({ studentId: promotedId });
+          if (promotedDoc && promotedDoc.email && courseObj) {
+            sendPromotionEmail({ to: promotedDoc.email, name: promotedDoc.name || promotedId, studentId: promotedId, course: courseObj }).catch(console.error);
+          }
+        }
+      } catch (err) {
+        console.error('Notification error (drop):', err);
+      }
+    })();
 
     return res.status(result.status).json(result.body);
   } catch (err) {

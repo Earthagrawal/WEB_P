@@ -1,0 +1,7 @@
+Hi {{ name }},
+
+You're confirmed for {{ courseCode }} — {{ courseTitle }}.
+Instructor: {{ instructor }}
+
+Regards,
+Course Allotment Portal
