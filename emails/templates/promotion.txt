@@ -1,0 +1,7 @@
+Hi {{ name }},
+
+Good news — you've been promoted from the waitlist to enrolled for {{ courseCode }} — {{ courseTitle }}.
+Please check your enrollments in the portal.
+
+Regards,
+Course Allotment Portal

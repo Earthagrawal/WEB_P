@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { sendMandatoryEnrollEmail } = require('../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 const STUDENT_ROLL_REGEX = /^\d{2}(UCS|DCS|UEC|DEC|UME|UCC)\d{3}$/i;
@@ -173,6 +174,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
 
     // Auto-enroll in MANDATORY courses for their batch
+    let autoEnrolledCourses = [];
     if (user.role !== 'admin') {
       const Course = require('../models/Course');
       const Enrollment = require('../models/Enrollment');
@@ -194,9 +196,21 @@ exports.login = async (req, res) => {
             enrolledAt: new Date()
           });
           await Course.findByIdAndUpdate(course._id, { $inc: { enrolledCount: 1 } });
+          autoEnrolledCourses.push({ courseCode: course.courseCode, title: course.title });
         }
       }
     }
+
+    // Send notification about mandatory auto-enrollments (async)
+    (async () => {
+      try {
+        if (autoEnrolledCourses.length > 0 && user.email) {
+          await sendMandatoryEnrollEmail({ to: user.email, name: user.name, studentId: sid, courses: autoEnrolledCourses });
+        }
+      } catch (err) {
+        console.error('Failed to send mandatory enroll email:', err);
+      }
+    })();
 
     res.json({
       success: true,
